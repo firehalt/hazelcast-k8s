@@ -1,0 +1,51 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata: 
+  name: hazelcast
+  namespace: evolut
+  labels: 
+    name: hazelcast
+spec:
+  replicas: 2 
+  template: 
+    metadata: 
+      labels: 
+        name: hazelcast
+    spec: 
+      containers: 
+      - name: hazelcast
+        #image: quay.io/pires/hazelcast-kubernetes:3.12.2
+        image: 10.250.200.200/k8s/hazelcast:3.12.2-1
+        imagePullPolicy: Always
+        env:
+        - name: "DNS_DOMAIN"
+          value: "cluster.local"
+        # - name: "hazelcast.mancenter.enabled"
+          # value: "true"
+        # - name: "hazelcast.mancenter.url"
+          # value: "http://management-center:8080/hazelcast-mancenter"
+        # - name: "hazelcast.user"
+          # value: "test"
+        # - name: "hazelcast.passwd"
+          # value: "test"
+        #- name: "YOUR_MANAGEMENT_CENTER_URL"
+        #  value: "http://management-center:8080/hazelcast-mancenter"
+        ports: 
+        - name: hazelcast
+          containerPort: 5701
+---
+apiVersion: v1
+kind: Service
+metadata: 
+  labels: 
+    name: hazelcast
+  name: hazelcast
+  namespace: evolut
+spec: 
+  type: NodePort
+  ports:
+    - port: 5701
+      protocol: TCP
+      nodePort: 35701
+  selector: 
+    name: hazelcast
