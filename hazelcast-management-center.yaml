@@ -1,0 +1,65 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: management-center
+  namespace: evolut
+  labels:
+    k8s-app: management-center
+
+spec:
+  replicas: 1
+  #滚动升级时70s后认为该pod就绪
+  revisionHistoryLimit: 3
+  minReadySeconds: 70
+  strategy:
+    ##由于replicas为3,则整个升级,pod个数在2-4个之间
+    rollingUpdate:
+      #滚动升级时会先启动1个pod    
+      maxSurge: 1 
+      #滚动升级时允许的最大Unavailable的pod个数      
+      maxUnavailable: 1 
+  selector:
+    matchLabels:
+      k8s-app: management-center
+  template:
+    metadata:
+      labels:
+        k8s-app: management-center
+    spec:
+      ##k8s将会给应用发送SIGTERM信号
+      terminationGracePeriodSeconds: 60 
+      containers:
+      - name: management-center
+        image:  hazelcast/management-center:3.12.2
+        resources:
+          # need more cpu upon initialization, therefore burstable class
+          #limits:
+            #cpu: 1000m
+          #requests:
+            #cpu: 100m
+        ports:
+        #容器的端口
+        - containerPort: 8080
+          #name: ui
+          protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: management-center
+  namespace: evolut
+  labels:
+    k8s-app: management-center
+
+spec:
+  type: NodePort
+  ports:
+  #集群IP的端口
+  - port: 8080
+    protocol: TCP
+    #容器的端口
+    targetPort: 8080
+    nodePort: 38080
+  selector:
+    k8s-app: management-center
